@@ -3,7 +3,7 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
-
+const jwt = require('jsonwebtoken');
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -13,7 +13,6 @@ const verifyJWT = (req, res, next) => {
   if (!authorization) {
     return res.status(401).send({ error: true, message: 'unauthorized access' });
   }
-  // bearer token
   const token = authorization.split(' ')[1];
 
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
@@ -55,7 +54,6 @@ async function run() {
 
     app.post('/users', async (req, res) => {
       const user = req.body;
-      console.log('New user:', user);
 
       const query = { email: user.email };
       const existingUser = await usersCollection.findOne(query);
