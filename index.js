@@ -69,6 +69,10 @@ async function run() {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
+    app.get('/users',async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
 
     app.get('/popular_classes', async (req, res) => {
       try {
