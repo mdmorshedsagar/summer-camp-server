@@ -42,6 +42,10 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
+     app.get('/allClasses', async (req, res) => {
+      const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
 
     app.get('/popular_classes', async (req, res) => {
       try {
