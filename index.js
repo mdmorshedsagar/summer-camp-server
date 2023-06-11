@@ -55,6 +55,16 @@ async function run() {
       }
       next();
     }
+    // const verifyInstructor = async (req, res, next) => {
+    //   const email = req.decoded.email;
+    //   const query = { email: email };
+    //   const user = await usersCollection.findOne(query);
+    //   if (user?.role !== 'instructor') {
+    //     return res.status(403).send({ error: true, message: 'Forbidden' });
+    //   }
+    //   next();
+    // };
+    
 
     app.post('/jwt', (req, res) => {
       const user = req.body;
@@ -84,7 +94,7 @@ async function run() {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
-    app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+    app.get('/users/admin/:email', verifyJWT,verifyAdmin, async (req, res) => {
       const email = req.params.email;
 
       if (req.decoded.email !== email) {
@@ -96,6 +106,19 @@ async function run() {
       const result = { admin: user?.role === 'admin' }
       res.send(result);
     })
+    // app.get('/users/instructor/:email', verifyJWT, verifyInstructor, async (req, res) => {
+    //   const email = req.params.email;
+    
+    //   if (req.decoded.email !== email) {
+    //     res.send({ instructor: false });
+    //   }
+    
+    //   const query = { email: email };
+    //   const user = await usersCollection.findOne(query);
+    //   const result = { instructor: user?.role === 'instructor' };
+    //   res.send(result);
+    // });
+    
     app.post("/classes/submit", (req, res) => {
       const {
         sports_name,
@@ -203,6 +226,17 @@ async function run() {
         console.error('Error retrieving popular classes:', error);
         res.status(500).json({ error: 'Server error' });
       }
+    });
+
+    app.get('/popular_instructor', async (req, res) => {
+        const popularClasses = await classesCollection
+          .find({status: "approved"})
+          .sort({ studentsCount: -1 })
+          .limit(6)
+          .toArray();
+
+        res.json(popularClasses);
+      
     });
 
     app.get('/', (req, res) => {
