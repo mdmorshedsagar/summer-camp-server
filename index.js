@@ -77,7 +77,7 @@ async function run() {
       res.send(result);
     });
      app.get('/allClasses', async (req, res) => {
-      const result = await classesCollection.find().toArray();
+      const result = await classesCollection.find({status: "approved"}).toArray();
       res.send(result);
     });
     app.get('/users',verifyJWT,verifyAdmin, async (req, res) => {
@@ -131,52 +131,36 @@ async function run() {
         res.status(200).json({ message: "Class submitted successfully." });
       });
     });
-    app.get("/classes/pending", async(req, res) => {
-      const classes = await classesCollection.find({ status: 'pending' }).toArray();
+    app.get("/classes", async(req, res) => {
+      const classes = await classesCollection.find().toArray();
       res.json(classes);
     });
-    app.put("/classes/approve/:id", (req, res) => {
-      const { id } = req.params;
+    app.patch("/classes/approve/:id", async(req, res) => {
   
-      db.collection("classes").findOneAndUpdate(
-        { _id:new ObjectId(id) },
-        { $set: { status: "approved" } },
-        { returnOriginal: false },
-        (err, updatedClass) => {
-          if (err) {
-            console.error(err);
-            return res.status(500).json({ error: "Failed to approve the class." });
-          }
-          res.status(200).json({ message: "Class approved successfully." });
-        }
-      );
+      const id = req.params.id;
+      console.log(id);
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+           status: "approved"
+           },
+      };
+    
+      const result = await classesCollection.updateOne(filter, updateDoc);
+      res.send(result);
     });
-    // app.get('/classes', (req, res) => {
-    //   classesCollection.find().toArray((err, classes) => {
-    //     if (err) {
-    //       console.error(err);
-    //       return res.status(500).json({ error: 'Failed to retrieve classes.' });
-    //     }
-    //     res.status(200).json(classes);
-    //   });
-    // });
-  
-    // Route to deny a class
-    app.put("/classes/deny/:id", (req, res) => {
-      const { id } = req.params;
-  
-      db.collection("classes").findOneAndUpdate(
-        { _id:new ObjectId(id) },
-        { $set: { status: "denied" } },
-        { returnOriginal: false },
-        (err, updatedClass) => {
-          if (err) {
-            console.error(err);
-            return res.status(500).json({ error: "Failed to deny the class." });
-          }
-          res.status(200).json({ message: "Class denied successfully." });
-        }
-      );
+    app.patch("/classes/deny/:id", async(req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+           status: "denied"
+           },
+      };
+    
+      const result = await classesCollection.updateOne(filter, updateDoc);
+      res.send(result);
     });
   
     app.patch('/users/admin/:id', async (req, res) => {
@@ -209,7 +193,7 @@ async function run() {
     app.get('/popular_classes', async (req, res) => {
       try {
         const popularClasses = await classesCollection
-          .find()
+          .find({status: "approved"})
           .sort({ studentsCount: -1 })
           .limit(6)
           .toArray();
