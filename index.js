@@ -96,7 +96,89 @@ async function run() {
       const result = { admin: user?.role === 'admin' }
       res.send(result);
     })
-
+    app.post("/classes/submit", (req, res) => {
+      const {
+        sports_name,
+        imageURL,
+        instructorName,
+        email,
+        Total_seats,
+        price,
+        photoURL,
+        availableSeats,
+        description,
+      } = req.body;
+      console.log(req.body);
+    
+      const newClass = {
+        sports_name,
+        imageURL,
+        instructorName,
+        photoURL,
+        email,
+        Total_seats: parseInt(Total_seats),
+        availableSeats: parseInt(availableSeats),
+        price: parseFloat(price),
+        description,
+        status: "pending",
+      };
+    
+      classesCollection.insertOne(newClass, (err, result) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({ error: "Failed to submit the class." });
+        }
+        res.status(200).json({ message: "Class submitted successfully." });
+      });
+    });
+    app.get("/classes/pending", async(req, res) => {
+      const classes = await classesCollection.find({ status: 'pending' }).toArray();
+      res.json(classes);
+    });
+    app.put("/classes/approve/:id", (req, res) => {
+      const { id } = req.params;
+  
+      db.collection("classes").findOneAndUpdate(
+        { _id:new ObjectId(id) },
+        { $set: { status: "approved" } },
+        { returnOriginal: false },
+        (err, updatedClass) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Failed to approve the class." });
+          }
+          res.status(200).json({ message: "Class approved successfully." });
+        }
+      );
+    });
+    // app.get('/classes', (req, res) => {
+    //   classesCollection.find().toArray((err, classes) => {
+    //     if (err) {
+    //       console.error(err);
+    //       return res.status(500).json({ error: 'Failed to retrieve classes.' });
+    //     }
+    //     res.status(200).json(classes);
+    //   });
+    // });
+  
+    // Route to deny a class
+    app.put("/classes/deny/:id", (req, res) => {
+      const { id } = req.params;
+  
+      db.collection("classes").findOneAndUpdate(
+        { _id:new ObjectId(id) },
+        { $set: { status: "denied" } },
+        { returnOriginal: false },
+        (err, updatedClass) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Failed to deny the class." });
+          }
+          res.status(200).json({ message: "Class denied successfully." });
+        }
+      );
+    });
+  
     app.patch('/users/admin/:id', async (req, res) => {
       const id = req.params.id;
       console.log(id);
