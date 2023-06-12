@@ -44,6 +44,7 @@ async function run() {
     const db = client.db('summer_camp_db');
     const usersCollection = db.collection('users');
     const classesCollection = db.collection('classes');
+    const cartCollection = db.collection('carts');
 
 
     const verifyAdmin = async (req, res, next) => {
@@ -110,6 +111,11 @@ async function run() {
       const result = { admin: user?.role === 'admin' }
       res.send(result);
     })
+    app.post('/carts', async (req, res) => {
+      const item = req.body;
+      const result = await cartCollection.insertOne(item);
+      res.send(result);
+    });
     // app.get('/users/instructor/:email', verifyJWT, verifyInstructor, async (req, res) => {
     //   const email = req.params.email;
     
