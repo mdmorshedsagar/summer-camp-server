@@ -116,6 +116,25 @@ async function run() {
       const result = await cartCollection.insertOne(item);
       res.send(result);
     });
+      app.get('/carts', verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send([]);
+      }
+      const decodedEmail = req.decoded.email;
+      if (email !== decodedEmail) {
+        return res.status(403).send({ error: true, message: 'forbidden access' })
+      }
+      const query = { email: email };
+      const result = await cartCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.delete('/carts/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await cartCollection.deleteOne(query);
+      res.send(result);
+    });
     // app.get('/users/instructor/:email', verifyJWT, verifyInstructor, async (req, res) => {
     //   const email = req.params.email;
     
