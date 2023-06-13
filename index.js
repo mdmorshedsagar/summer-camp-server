@@ -48,27 +48,7 @@ async function run() {
     const cartCollection = db.collection('carts');
     const paymentCollection =db.collection("payments");
 
-
-    const verifyAdmin = async (req, res, next) => {
-      const email = req.decoded.email;
-      const query = { email: email }
-      const user = await usersCollection.findOne(query);
-      if (user?.role !== 'admin') {
-        return res.status(403).send({ error: true, message: 'forbidden message' });
-      }
-      next();
-    }
-    // const verifyInstructor = async (req, res, next) => {
-    //   const email = req.decoded.email;
-    //   const query = { email: email };
-    //   const user = await usersCollection.findOne(query);
-    //   if (user?.role !== 'instructor') {
-    //     return res.status(403).send({ error: true, message: 'Forbidden' });
-    //   }
-    //   next();
-    // };
     
-
     app.post('/jwt', (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
@@ -97,11 +77,11 @@ async function run() {
       const result = await classesCollection.find({status: "approved"}).toArray();
       res.send(result);
     });
-    app.get('/users',verifyJWT,verifyAdmin, async (req, res) => {
+    app.get('/users',verifyJWT, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
-    app.get('/users/admin/:email', verifyJWT,verifyAdmin, async (req, res) => {
+    app.get('/users/admin/:email', verifyJWT, async (req, res) => {
       const email = req.params.email;
 
       if (req.decoded.email !== email) {
@@ -112,6 +92,52 @@ async function run() {
       const user = await usersCollection.findOne(query);
       const result = { admin: user?.role === 'admin' }
       res.send(result);
+    })
+    app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
+      const email = req.params.email;
+
+      if (req.decoded.email !== email) {
+        res.send({ admin: false })
+      }
+      console.log(email);
+      const query = { email: email }
+      const user = await usersCollection.findOne(query);
+      const result = { admin: user?.role === 'instructor' }
+      res.send(result);
+    })
+    app.get('/instructorClass', verifyJWT, async (req, res) => {
+      const email = req.query.email;
+
+      if (!email) {
+        res.send([]);
+      }
+
+      const decodedEmail = req.decoded.email;
+      if (email !== decodedEmail) {
+        return res.status(403).send({ error: true, message: 'forbidden access' })
+      }
+
+      const query = { email: email };
+      const result = await classesCollection.find(query).toArray();
+      res.send(result);
+     
+    })
+    app.get('/paymentDetails', verifyJWT, async (req, res) => {
+      const email = req.query.email;
+
+      if (!email) {
+        res.send([]);
+      }
+
+      const decodedEmail = req.decoded.email;
+      if (email !== decodedEmail) {
+        return res.status(403).send({ error: true, message: 'forbidden access' })
+      }
+
+      const query = { email: email };
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
+     
     })
     app.post('/carts', async (req, res) => {
       const item = req.body;
@@ -166,54 +192,12 @@ async function run() {
 
       res.send({ insertResult, deleteResult });
     })
-    // app.get('/users/instructor/:email', verifyJWT, verifyInstructor, async (req, res) => {
-    //   const email = req.params.email;
     
-    //   if (req.decoded.email !== email) {
-    //     res.send({ instructor: false });
-    //   }
-    
-    //   const query = { email: email };
-    //   const user = await usersCollection.findOne(query);
-    //   const result = { instructor: user?.role === 'instructor' };
-    //   res.send(result);
-    // });
-    
-    app.post("/classes/submit", (req, res) => {
-      const {
-        sports_name,
-        imageURL,
-        instructorName,
-        email,
-        Total_seats,
-        price,
-        photoURL,
-        availableSeats,
-        description,
-      } = req.body;
-      console.log(req.body);
-    
-      const newClass = {
-        sports_name,
-        imageURL,
-        instructorName,
-        photoURL,
-        email,
-        Total_seats: parseInt(Total_seats),
-        availableSeats: parseInt(availableSeats),
-        price: parseFloat(price),
-        description,
-        status: "pending",
-      };
-    
-      classesCollection.insertOne(newClass, (err, result) => {
-        if (err) {
-          console.error(err);
-          return res.status(500).json({ error: "Failed to submit the class." });
-        }
-        res.status(200).json({ message: "Class submitted successfully." });
-      });
-    });
+    app.post('/addClass', async (req, res) => {
+      const newItem = req.body;
+      const result = await classesCollection.insertOne(newItem)
+      res.send(result);
+    })
     app.get("/classes", async(req, res) => {
       const classes = await classesCollection.find().toArray();
       res.json(classes);
@@ -248,7 +232,6 @@ async function run() {
   
     app.patch('/users/admin/:id', async (req, res) => {
       const id = req.params.id;
-      console.log(id);
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
@@ -261,7 +244,6 @@ async function run() {
     });
     app.patch('/users/instructor/:id', async (req, res) => {
       const id = req.params.id;
-      console.log(id);
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
